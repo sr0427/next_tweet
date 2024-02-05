@@ -1,24 +1,56 @@
 "use client"
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FaUser } from "react-icons/fa";
 import Link from "next/link";
 import Input from "@/app/components/Input";
+import { registUser } from "@/app/services/UserService";
+import { useRouter } from "next/navigation";
+import FormError from "@/app/components/FormError";
+import Loading from "@/app/components/Loading";
+import ClickButton from "@/app/components/ClickButton";
+import LinkButton from "@/app/components/LinkButton";
+
+interface registError {
+    name: string;
+    email: string;
+    password: string;
+}
 
 const RegistPage = () => {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [error, setError] = useState<registError>({ name: "", email: "", password: "" })
+    const [isLoading, setIsLoading] = useState<boolean>(false);
+
+    //ルーター作成
+    const router = useRouter();
 
     const regist = async () => {
+        setIsLoading(true);
+
         console.log(name, email, password)
+        // APIにデータ送信（ユーザ登録）
+        const result = await registUser({ name, email, password });
+        if (result.error) {
+            console.log(result.error)
+            setError(result.error)
+            // エラー表示
+        } else {
+            // リダイレクト
+            router.push('/auth/login');
+        }
+        setIsLoading(false);
     }
+
+    const disabled = () => !(name && email && password)
 
     return (
         <div className="mx-auto w-1/3">
             <h1 className="my-2 p-1 flex justify-center text-2xl font-bold">
                 <FaUser className="mt-2 me-2" />
-                Sign up
+                Register
             </h1>
 
             <div>
@@ -27,42 +59,38 @@ const RegistPage = () => {
                     onChange={setName}
                     placeholder="Your Name"
                 />
+                <FormError message={error.name} />
                 <Input
                     type="text"
                     onChange={setEmail}
                     placeholder="Email"
                 />
+                <FormError message={error.email} />
                 <Input
                     type="password"
                     onChange={setPassword}
                     placeholder="******"
                 />
+                <FormError message={error.password} />
             </div>
 
-            <div>
-                <button
-                    onClick={regist}
-                    className="
-                            w-full
-                          bg-blue-500 hover:bg-blue-700
-                          text-white font-bold 
-                          py-3 px-4 mb-2
-                          rounded
-                         ">
-                    Sign up
-                </button>
-                <Link
-                    href="/auth/login"
-                    className="
-                            flex justify-center
-                          bg-gray-200 hover:bg-gray-300
-                          text-gray-500 font-bold 
-                          py-3 px-4 
-                          rounded
-                         ">
-                    Sing in
-                </Link>
-            </div>
+            {
+                isLoading ?
+                    <Loading />
+                    :
+                    <div>
+                         <ClickButton
+                            label="Sign up"
+                            onClick={regist}
+                            disabled={disabled()}
+                        />
+
+                        <LinkButton
+                            href="/auth/login"
+                            label="Sign in"
+                        />
+                    </div>
+            }
         </div>
     );
 }
